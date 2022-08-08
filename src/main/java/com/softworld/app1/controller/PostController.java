@@ -9,15 +9,12 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-//import java.util.Map;
-//import java.util.List;
 import java.util.Optional;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import javax.validation.Valid;
 
-//import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.data.domain.Page;
@@ -42,18 +39,14 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import com.softworld.app1.controller.form.PostOut;
-import com.softworld.app1.controller.form.UserRole;
 import com.softworld.app1.exception.ResourceNotFoundException;
 import com.softworld.app1.controller.form.Category_id_name;
 import com.softworld.app1.controller.form.Code_Message;
 import com.softworld.app1.controller.form.PostInput;
-//import com.softworld.app1.model.Category;
 import com.softworld.app1.model.Post;
 import com.softworld.app1.service.CategoryPostServiceImpl;
 import com.softworld.app1.service.CategoryServiceImpl;
-//import com.softworld.app1.service.ICommonService;
 import com.softworld.app1.service.PostServiceImpl;
-import com.softworld.app1.service.RoleServiceImpl;
 
 @RestController
 @RequestMapping("/api")
@@ -68,115 +61,67 @@ public class PostController {
 	@Autowired
 	private CategoryServiceImpl categoryService;
 
-	@Autowired
-	private RoleServiceImpl roleService;
-
 	// get all Post's data
 	@RequestMapping(value = "posts", method = RequestMethod.GET)
 	@PreAuthorize("permitAll()")
 	public Object getAllPosts(HttpServletRequest request) {
-		UserRole ur = null;
-		HttpSession session = request.getSession();
 
-		if (session.getAttribute("userrole") == null)
-			// trả về đường link localhost:8080/api/login
-			return new Code_Message(403, "Forbidden", "You should login first: "
-					+ ServletUriComponentsBuilder.fromCurrentContextPath().path("/api/login/").toUriString());
-		else
-			ur = (UserRole) session.getAttribute("userrole");
-		if (roleService.getRoleName(ur.getUsername()) != null) {
-			return new ResponseEntity<Iterable<Post>>(postService.findAll(), HttpStatus.OK);
-		} else
-			return new Code_Message(403, "Forbidden", "You don't have permission to enter ");
+		return new ResponseEntity<Iterable<Post>>(postService.findAll(), HttpStatus.OK);
 
 	}
 
 	// find Post's data by ID
 	@GetMapping("/post/{id}")
+	@PreAuthorize("permitAll()")
 	public Object getByPostId(@PathVariable("id") long id, HttpServletRequest request) {
-		UserRole ur = null;
-		HttpSession session = request.getSession();
 
-		if (session.getAttribute("userrole") == null)
-			// trả về đường link localhost:8080/api/login
-			return new Code_Message(403, "Forbidden", "You should login first: "
-					+ ServletUriComponentsBuilder.fromCurrentContextPath().path("/api/login/").toUriString());
-		else
-			ur = (UserRole) session.getAttribute("userrole");
-		if (roleService.getRoleName(ur.getUsername()) != null) {
-			return new ResponseEntity<Post>(postService.getById(id), HttpStatus.OK);
-		} else
-			return new Code_Message(403, "Forbidden", "You don't have permission to enter ");
+		return new ResponseEntity<Post>(postService.getById(id), HttpStatus.OK);
 
 	}
 
 	// create 1 category's data into database categories (schema app1)
 	@RequestMapping(value = "post/create", method = RequestMethod.POST)
+	@PreAuthorize("hasAnyAuthority(\"ROLE_EDITOR\", \"ROLE_ADMIN\")")
 	public Object addPost(@Valid @RequestBody Post post, HttpServletRequest request) {
-		UserRole ur = null;
-		HttpSession session = request.getSession();
 
-		if (session.getAttribute("userrole") == null)
-			// trả về đường link localhost:8080/api/login
-			return new Code_Message(403, "Forbidden", "You should login first: "
-					+ ServletUriComponentsBuilder.fromCurrentContextPath().path("/api/login/").toUriString());
-		else
-			ur = (UserRole) session.getAttribute("userrole");
-		ur.setRolename(roleService.getRoleName(ur.getUsername()));
-
-		if (ur.getRolename() != null && ur.getRolename().compareTo("user") != 0) {
-			Post p = new Post();
-			Date date = new Date();
-			SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
-			// if create_at and update_at have null value then assign value equal to current
-			// time
-			if (post.getUpdatedAt() == null)
-				post.setUpdatedAt(formatter.format(date));
-			if (post.getCreatedAt() == null)
-				post.setCreatedAt(formatter.format(date));
-			p = postService.save(post);
-			return new ResponseEntity<Post>(p, HttpStatus.OK);
-		} else
-			return new Code_Message(403, "Forbidden", "You don't have permission to create");
+		Post p = new Post();
+		Date date = new Date();
+		SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+		// if create_at and update_at have null value then assign value equal to current
+		// time
+		if (post.getUpdatedAt() == null)
+			post.setUpdatedAt(formatter.format(date));
+		if (post.getCreatedAt() == null)
+			post.setCreatedAt(formatter.format(date));
+		p = postService.save(post);
+		return new ResponseEntity<Post>(p, HttpStatus.OK);
 
 	}
 
 	// update 1 category's data into database categories(schema app1)
 	@RequestMapping(value = "/post/edit/{id}", method = RequestMethod.PUT)
+	@PreAuthorize("hasAnyAuthority(\"ROLE_EDITOR\", \"ROLE_ADMIN\")")
 	public Object updateCategory(@RequestBody Post postForm, @PathVariable("id") long id, HttpServletRequest request) {
-		UserRole ur = null;
-		HttpSession session = request.getSession();
 
-		if (session.getAttribute("userrole") == null)
-			// trả về đường link localhost:8080/api/login
-			return new Code_Message(403, "Forbidden", "You should login first: "
-					+ ServletUriComponentsBuilder.fromCurrentContextPath().path("/api/login/").toUriString());
-		else
-			ur = (UserRole) session.getAttribute("userrole");
-		ur.setRolename(roleService.getRoleName(ur.getUsername()));
+		Post p = postService.getById(id);
+		Date date = new Date();
+		SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+		if (p == null)
+			return ResponseEntity.notFound().build();
+		else {
+			p.setTitle(postForm.getTitle());
 
-		if (ur.getRolename() != null && ur.getRolename().compareTo("user") != 0) {
-			Post p = postService.getById(id);
-			Date date = new Date();
-			SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
-			if (p == null)
-				return ResponseEntity.notFound().build();
-			else {
-				p.setTitle(postForm.getTitle());
+			p.setContent(postForm.getContent());
 
-				p.setContent(postForm.getContent());
+			if (postForm.getCreatedAt() == null)
+				p.setCreatedAt(formatter.format(date));
 
-				if (postForm.getCreatedAt() == null)
-					p.setCreatedAt(formatter.format(date));
+			if (postForm.getUpdatedAt() == null)
+				p.setUpdatedAt(formatter.format(date));
 
-				if (postForm.getUpdatedAt() == null)
-					p.setUpdatedAt(formatter.format(date));
-
-				Post updatePost = postService.save(p);
-				return new ResponseEntity<Post>(updatePost, HttpStatus.OK);
-			}
-		} else
-			return new Code_Message(403, "Forbidden", "You don't have permission to update");
+			Post updatePost = postService.save(p);
+			return new ResponseEntity<Post>(updatePost, HttpStatus.OK);
+		}
 
 	}
 
@@ -184,21 +129,8 @@ public class PostController {
 	@DeleteMapping("/post/delete/{id}")
 	@PreAuthorize("hasAuthority('ROLE_ADMIN')")
 	public Object deletePostById(@PathVariable("id") long id, HttpServletRequest request) throws Exception {
-		UserRole ur = null;
-		HttpSession session = request.getSession();
-		
-		if(session.getAttribute("userrole") == null)
-			//trả về đường link localhost:8080/api/login
-			return new Code_Message(403, "Forbidden", "You should login first: "
-					+ ServletUriComponentsBuilder.fromCurrentContextPath().path("/api/login/").toUriString());
-		else
-			ur = (UserRole) session.getAttribute("userrole");
-		ur.setRolename(roleService.getRoleName(ur.getUsername()));
+		return new ResponseEntity<Optional<Post>>(postService.delete(id), HttpStatus.OK);
 
-		if (ur.getRolename() != null && ur.getRolename().compareTo("user") != 0 && ur.getRolename().compareTo("editor") != 0) {
-			return new ResponseEntity<Optional<Post>>(postService.delete(id), HttpStatus.OK);
-		}
-		else return new Code_Message(403, "Forbidden", "You don't have permission to delete");
 	}
 
 	// get Post by id with categoryID and categoryName
@@ -370,11 +302,6 @@ public class PostController {
 		String[] imageTails = { "JPG", "GIF", "PNG" };
 		for (String tail : imageTails) {
 			if (photoTail[1].equalsIgnoreCase(tail)) {
-//				System.out.println(file.getOriginalFilename());
-//				System.out.println(file.getName());
-//				System.out.println(file.getContentType());
-//				System.out.println(file.getSize());
-
 				session.setAttribute("filename", file.getOriginalFilename());
 				session.setAttribute("contenttype", file.getContentType());
 				session.setAttribute("getbytes", file.getBytes());
