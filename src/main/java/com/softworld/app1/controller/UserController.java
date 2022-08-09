@@ -1,6 +1,5 @@
 package com.softworld.app1.controller;
 
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
 
@@ -21,17 +20,14 @@ import com.softworld.app1.service.EmailSenderService;
 import com.softworld.app1.service.RoleServiceImpl;
 import com.softworld.app1.service.UserService;
 
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
-
-import com.softworld.app1.controller.form.Code_Message;
+import com.softworld.app1.controller.form.ErrorMessage;
+import com.softworld.app1.controller.form.JWTToken;
 import com.softworld.app1.controller.form.UserCode;
 import com.softworld.app1.controller.form.UserInput;
 import com.softworld.app1.controller.form.UserRole;
 import com.softworld.app1.controller.form.VerificationCodeUser;
 import com.softworld.app1.model.User;
 
-import java.util.Base64;
 import java.util.Date;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
@@ -52,25 +48,17 @@ public class UserController {
 	@Autowired
 	private RoleServiceImpl roleService;
 
-	private static final String SECRET_KEY = "123456789";
-	private static final long EXPIRE_TIME = 86400000000L;
-
 	// create User
 	@PostMapping("/user/create")
 	public ResponseEntity<User> addUser(@RequestBody User user) throws NoSuchAlgorithmException {
-		// convert password to string SHA1
-		MessageDigest mDigest = MessageDigest.getInstance("SHA1");
-		byte[] result = mDigest.digest(user.getPassword().getBytes());
-		StringBuffer sb = new StringBuffer();
-		for (int i = 0; i < result.length; i++)
-			sb.append(Integer.toString((result[i] & 0xff) + 0x100, 16).substring(1));
 
-		User u = new User(user.getUserName(), user.getFullName(), sb.toString(), user.getDeleteAt(), user.getEmail());
+		User u = new User(user.getUserName(), user.getFullName(), DigestUtils.sha1Hex(user.getPassword().toString()),
+				user.getDeleteAt(), user.getEmail());
 		return new ResponseEntity<User>(userService.save(u), HttpStatus.OK);
 
 	}
 
-	//update users with id
+	// update users with id
 	@PutMapping("/user/edit/{id}")
 	public ResponseEntity<User> updateUser(@PathVariable("id") long userID, @RequestBody User user) {
 		User u = userService.getById(userID);
@@ -82,7 +70,7 @@ public class UserController {
 		return new ResponseEntity<User>(userUpdate, HttpStatus.OK);
 	}
 
-	//delete users with id
+	// delete users with id
 	@PutMapping("/user/delete/{id}")
 	public ResponseEntity<User> deleteUser(@PathVariable("id") long userID) {
 		Date date = new Date();
@@ -100,28 +88,24 @@ public class UserController {
 		// convert password to SHA1
 		// DigestUtils.sha1Hex(uInput.getPassword().toString())
 		UserRole ur = new UserRole();
-		
+
 		ur.setUsername(uInput.getUsername());
 		ur.setRolename(roleService.getRoleName(ur.getUsername()));
-		
+
 		User user = userService.getUserName(uInput.getUsername());
 		if (user != null && DigestUtils.sha1Hex(uInput.getPassword().toString()).equals(user.getPassword())) {
 			if (user.getDeleteAt() == null) {
 
 				request.getSession().setAttribute("userrole", ur);
+				String token = JWTToken.token(user.getFullName(), ur.getRolename(), uInput.getUsername());
 
-				String token = Jwts.builder().claim("fullName", user.getFullName())
-						.claim("role", ur.getRolename().toString())
-						.setSubject((uInput.getUsername()))
-						.setIssuedAt(new Date()).setExpiration(new Date((new Date()).getTime() + EXPIRE_TIME * 1000))
-						.signWith(SignatureAlgorithm.HS512, SECRET_KEY).compact();
-				return new Code_Message(200, "OK", token);
+				return ErrorMessage.OK(token);
 			} else {
-				return new Code_Message(405, "Method Not Allowed", "Account disabled");
+				return ErrorMessage.methodNotAllowed("Account disabled");
 
 			}
 		} else {
-			return new Code_Message(401, "Unauthorized", "Login information is incorrect");
+			return ErrorMessage.unAuthorized("Login information is incorrect");
 		}
 
 	}
@@ -129,12 +113,8 @@ public class UserController {
 	// convert JWT to json
 	@GetMapping("/convert")
 	public Object convertJwtToJson(@RequestParam String token) {
-		String[] chunks = token.split("\\.");
-		Base64.Decoder decoder = Base64.getUrlDecoder();
 
-		String payload = new String(decoder.decode(chunks[1]));
-
-		return payload;
+		return JWTToken.payload(token);
 	}
 
 	// forgot password, check user name
@@ -149,7 +129,7 @@ public class UserController {
 
 		if (user != null) {
 			if (user.getDeleteAt() != null) {
-				return new Code_Message(405, "Method Not Allowed", "Account disabled");
+				return ErrorMessage.methodNotAllowed("Account disabled");
 			}
 			// random verification code
 			String verificationCode = "";
@@ -168,15 +148,15 @@ public class UserController {
 				userService.save(user);
 
 			}
-			// send verification code into email "nguyenduchieu112001@gmail.com" with title
+			// send verification code into email "email of user" with title
 			// "Mã xác thực"
-			mailSenderService.sendEmail("nguyenduchieu112001@gmail.com", "Mã xác thực", verificationCode.toString());
+			mailSenderService.sendEmail(user.getEmail(), "Mã xác thực", verificationCode.toString());
 
-			return new Code_Message(200, "OK", "UserName correct");
+			return ErrorMessage.OK("UserName correct");
 		}
 
 		else
-			return new Code_Message(401, "Unauthorized", "Login information is incorrect");
+			return ErrorMessage.unAuthorized("Login information is incorrect");
 	}
 
 	// reset Password when enter verificationCode true
@@ -196,16 +176,16 @@ public class UserController {
 		Date currentTime = new Date(date.getTime());
 		String time = formatter.format(currentTime);
 
-		while (userCode.getCode().compareTo(verUser.getVerificationCode()) == 0) {
+		if (userCode.getCode().compareTo(verUser.getVerificationCode()) == 0) {
 			if (time.compareTo(verUser.getExpirationCodeTime()) == 1) {
-				return new Code_Message(405, "Method Not Allowed", "Verification Code is expired");
+				return ErrorMessage.methodNotAllowed("Verification Code is expired");
 			} else {
 				u.setPassword(DigestUtils.sha1Hex(userCode.getPassword().toString()));
 				userService.save(u);
 				return u;
 			}
 		}
-		return new Code_Message(401, "Unauthorized", "Verification Code is not correct");
+		return ErrorMessage.unAuthorized("Verification Code is not correct");
 	}
 
 }

@@ -1,10 +1,6 @@
 package com.softworld.app1.controller;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -12,17 +8,14 @@ import java.util.List;
 import java.util.Optional;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
+import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.ByteArrayResource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -36,12 +29,11 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import com.softworld.app1.controller.form.PostOut;
 import com.softworld.app1.exception.ResourceNotFoundException;
 import com.softworld.app1.controller.form.Category_id_name;
-import com.softworld.app1.controller.form.Code_Message;
+import com.softworld.app1.controller.form.ImageProcessing;
 import com.softworld.app1.controller.form.PostInput;
 import com.softworld.app1.model.Post;
 import com.softworld.app1.service.CategoryPostServiceImpl;
@@ -295,39 +287,16 @@ public class PostController {
 
 	// upload file image
 	@PostMapping("/upload/image")
-	public Object uploadImage(@RequestParam("file") MultipartFile file, HttpSession session) throws IOException {
+	public Object uploadImage(@RequestParam("file") MultipartFile file) throws IOException {
 
-		String[] photoTail = file.getOriginalFilename().split("\\.");
-		System.out.println(photoTail[1]);
-		String[] imageTails = { "JPG", "GIF", "PNG" };
-		for (String tail : imageTails) {
-			if (photoTail[1].equalsIgnoreCase(tail)) {
-				session.setAttribute("filename", file.getOriginalFilename());
-				session.setAttribute("contenttype", file.getContentType());
-				session.setAttribute("getbytes", file.getBytes());
-
-				String Path_Directory = "C:\\Users\\nguye\\Downloads\\app1\\app1\\src\\main\\resources\\static\\image";
-				Files.copy(file.getInputStream(),
-						Paths.get(Path_Directory + File.separator + file.getOriginalFilename()),
-						StandardCopyOption.REPLACE_EXISTING);
-
-				String fileDownloadUrl = ServletUriComponentsBuilder.fromCurrentContextPath().path("/api/downloadFile/")
-						.path(file.getOriginalFilename()).toUriString();
-
-				return new Code_Message(200, "OK", fileDownloadUrl);
-			}
-		}
-		return new Code_Message(406, "Not Acceptable",
-				"The image does not have the same format as requested (PNG, GIF, JPG)");
+		return ImageProcessing.uploadImage(file);
 	}
 
 	// download image
 	@GetMapping("/downloadFile/{file:.+}")
-	public ResponseEntity<ByteArrayResource> downloadFile(@RequestBody MultipartFile file, HttpSession session)
-			throws IOException {
-		return ResponseEntity.ok().contentType(MediaType.parseMediaType((String) session.getAttribute("contenttype")))
-				.header(HttpHeaders.CONTENT_DISPOSITION,
-						"attachment, file=\"" + (String) session.getAttribute("filename"))
-				.body(new ByteArrayResource((byte[]) session.getAttribute("getbytes")));
+	public Object download(HttpServletRequest request, HttpServletResponse response,
+			@PathVariable("file") String fileName) throws IOException {
+
+		return ImageProcessing.downloadImage(fileName);
 	}
 }
