@@ -20,7 +20,7 @@ public class UserRoleController {
 	
 	//create value for user_roles
 	@PostMapping("userrole/create")
-	public ResponseEntity<User_Role> addUserRole(@RequestBody User_Role ur){
-		return new ResponseEntity<User_Role>(urService.save(ur), HttpStatus.OK);
+	public ResponseEntity<User_Role> addUserRole(@RequestBody User_Role user_role){
+		return new ResponseEntity<User_Role>(urService.save(user_role), HttpStatus.OK);
 	}
 }

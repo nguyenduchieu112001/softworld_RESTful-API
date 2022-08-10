@@ -1,9 +1,7 @@
 package com.softworld.app1.controller;
 
 import java.io.IOException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -33,6 +31,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.softworld.app1.controller.form.PostOut;
 import com.softworld.app1.exception.ResourceNotFoundException;
 import com.softworld.app1.controller.form.Category_id_name;
+import com.softworld.app1.controller.form.DateToSet;
 import com.softworld.app1.controller.form.ImageProcessing;
 import com.softworld.app1.controller.form.PostInput;
 import com.softworld.app1.model.Post;
@@ -57,18 +56,14 @@ public class PostController {
 	@RequestMapping(value = "posts", method = RequestMethod.GET)
 	@PreAuthorize("permitAll()")
 	public Object getAllPosts(HttpServletRequest request) {
-
 		return new ResponseEntity<Iterable<Post>>(postService.findAll(), HttpStatus.OK);
-
 	}
 
 	// find Post's data by ID
 	@GetMapping("/post/{id}")
 	@PreAuthorize("permitAll()")
 	public Object getByPostId(@PathVariable("id") long id, HttpServletRequest request) {
-
 		return new ResponseEntity<Post>(postService.getById(id), HttpStatus.OK);
-
 	}
 
 	// create 1 category's data into database categories (schema app1)
@@ -77,14 +72,8 @@ public class PostController {
 	public Object addPost(@Valid @RequestBody Post post, HttpServletRequest request) {
 
 		Post p = new Post();
-		Date date = new Date();
-		SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
-		// if create_at and update_at have null value then assign value equal to current
-		// time
-		if (post.getUpdatedAt() == null)
-			post.setUpdatedAt(formatter.format(date));
-		if (post.getCreatedAt() == null)
-			post.setCreatedAt(formatter.format(date));
+		// if create_at and update_at have null value then assign value equal to current time
+		DateToSet.setDateOfCreatePost(post);
 		p = postService.save(post);
 		return new ResponseEntity<Post>(p, HttpStatus.OK);
 
@@ -96,8 +85,6 @@ public class PostController {
 	public Object updateCategory(@RequestBody Post postForm, @PathVariable("id") long id, HttpServletRequest request) {
 
 		Post p = postService.getById(id);
-		Date date = new Date();
-		SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
 		if (p == null)
 			return ResponseEntity.notFound().build();
 		else {
@@ -105,11 +92,7 @@ public class PostController {
 
 			p.setContent(postForm.getContent());
 
-			if (postForm.getCreatedAt() == null)
-				p.setCreatedAt(formatter.format(date));
-
-			if (postForm.getUpdatedAt() == null)
-				p.setUpdatedAt(formatter.format(date));
+			DateToSet.setDateOfUpdatePost(postForm, postForm);
 
 			Post updatePost = postService.save(p);
 			return new ResponseEntity<Post>(updatePost, HttpStatus.OK);
@@ -122,28 +105,27 @@ public class PostController {
 	@PreAuthorize("hasAuthority('ROLE_ADMIN')")
 	public Object deletePostById(@PathVariable("id") long id, HttpServletRequest request) throws Exception {
 		return new ResponseEntity<Optional<Post>>(postService.delete(id), HttpStatus.OK);
-
 	}
 
 	// get Post by id with categoryID and categoryName
 	@GetMapping("/get/post/{id}")
 	public PostOut getPostById(@PathVariable(value = "id") long id, HttpStatus status) {
 
-		Post p = postService.getPostById(id);
-		if (p != null) {
-			PostOut cOut = new PostOut();
+		Post post = postService.getPostById(id);
+		if (post != null) {
+			PostOut postOut = new PostOut();
 			List<Category_id_name> categories = new ArrayList<>();
 			// category_ids
-			List<Long> l = cpService.getAll(id);
+			List<Long> listCategoryID = cpService.getAll(id);
 
-			cOut.setTitle(p.getTitle());
-			cOut.setContent(p.getContent());
-			for (Long long1 : l) {
-				String cate = categoryService.getNameById(long1);
-				categories.add(new Category_id_name(long1, cate));
+			postOut.setTitle(post.getTitle());
+			postOut.setContent(post.getContent());
+			for (Long list : listCategoryID) {
+				String categoryName = categoryService.getNameById(list);
+				categories.add(new Category_id_name(list, categoryName));
 			}
-			cOut.setCategories(categories);
-			return cOut;
+			postOut.setCategories(categories);
+			return postOut;
 		} else
 			throw new ResourceNotFoundException("Post not exist with id: " + id);
 
@@ -155,35 +137,35 @@ public class PostController {
 
 		if (postService.getPostById(id) != null) {
 			List<Category_id_name> categories = new ArrayList<>();
-			Post p = postService.getPostById(id);
-			PostOut cOut = new PostOut();
+			Post post = postService.getPostById(id);
+			PostOut postOut = new PostOut();
 
-			if (json.getTitle() != p.getTitle())
-				p.setTitle(json.getTitle());
-			if (json.getContent() != p.getContent())
-				p.setContent(json.getContent());
+			if (json.getTitle() != post.getTitle())
+				post.setTitle(json.getTitle());
+			if (json.getContent() != post.getContent())
+				post.setContent(json.getContent());
 
-			cOut.setTitle(p.getTitle());
-			cOut.setContent(p.getContent());
-			List<Long> j = cpService.getAll(id);
+			postOut.setTitle(post.getTitle());
+			postOut.setContent(post.getContent());
+			List<Long> listCategoryID = cpService.getAll(id);
 
-			for (long l : j) {
-				cpService.delCategoryPost(l, id);
+			for (long list : listCategoryID) {
+				cpService.delCategoryPost(list, id);
 			}
 
 			List<Integer> item = new ArrayList<>();
-			for (int long1 : json.getCategoryIDs()) {
-				cpService.insertCategoryPost(long1, id);
-				item.add(long1);
+			for (int listCategoryIDs : json.getCategoryIDs()) {
+				cpService.insertCategoryPost(listCategoryIDs, id);
+				item.add(listCategoryIDs);
 			}
 
-			for (Integer long2 : item) {
-				String cate = categoryService.getNameById(long2);
-				categories.add(new Category_id_name(long2, cate));
+			for (Integer lists : item) {
+				String cate = categoryService.getNameById(lists);
+				categories.add(new Category_id_name(lists, cate));
 			}
-			cOut.setCategories(categories);
+			postOut.setCategories(categories);
 
-			return cOut;
+			return postOut;
 		} else {
 			throw new ResourceNotFoundException("Post not exist id:" + id);
 		}
@@ -193,11 +175,11 @@ public class PostController {
 	// delete Post by id with categoryID and categoryName
 	@DeleteMapping("/delete/post/{id}")
 	public void delPost(@PathVariable("id") long postID) throws Exception {
-		List<Long> j = cpService.getAll(postID);
-		if (j.size() == 0)
+		List<Long> listCategoryID = cpService.getAll(postID);
+		if (listCategoryID.size() == 0)
 			throw new ResourceNotFoundException("Post not exist have list categoris with id:" + postID);
-		for (Long long1 : j) {
-			cpService.delCategoryPost(long1, postID);
+		for (Long list : listCategoryID) {
+			cpService.delCategoryPost(list, postID);
 		}
 
 		cpService.delete(postID);
@@ -208,16 +190,16 @@ public class PostController {
 	@GetMapping("/posts/{offset}/{pagesize}/{field}")
 	public ResponseEntity<Page<Post>> findPostsWithPaginationAndSorting(@PathVariable("offset") int offset,
 			@PathVariable("pagesize") int pageSize, @PathVariable String field) {
-		Page<Post> p = postService.findPostsWithPaginationAndSorting(offset, pageSize, field);
-		return new ResponseEntity<Page<Post>>(p, HttpStatus.OK);
+		Page<Post> post_page = postService.findPostsWithPaginationAndSorting(offset, pageSize, field);
+		return new ResponseEntity<Page<Post>>(post_page, HttpStatus.OK);
 	}
 
 	// find Posts with Pagination
 	@GetMapping("/posts/{offset}/{pagesize}")
 	public ResponseEntity<Page<Post>> findPostsWithPagination(@PathVariable("offset") int offset,
 			@PathVariable("pagesize") int pageSize) {
-		Page<Post> p = postService.findPostsWithPagination(offset, pageSize);
-		return new ResponseEntity<Page<Post>>(p, HttpStatus.OK);
+		Page<Post> post_page = postService.findPostsWithPagination(offset, pageSize);
+		return new ResponseEntity<Page<Post>>(post_page, HttpStatus.OK);
 	}
 
 	// get Posts with Pagination
@@ -225,9 +207,9 @@ public class PostController {
 	public ResponseEntity<List<PostOut>> getPostsWithPagination(@PathVariable int offset, @PathVariable int pageSize) {
 		if (offset <= 0)
 			offset = 1;
-		List<Post> p = postService.getPostsWithPagination(offset, pageSize);
+		List<Post> listPost = postService.getPostsWithPagination(offset, pageSize);
 		List<PostOut> postOut = new ArrayList<>();
-		for (Post post : p) {
+		for (Post post : listPost) {
 			Post post1 = postService.getById(post.getPostId());
 			PostOut pOut = new PostOut();
 			List<Category_id_name> categories = new ArrayList<>();
@@ -252,8 +234,8 @@ public class PostController {
 	public ResponseEntity<Page<Post>> getPostsWithSearchAndPagination(@RequestParam String query,
 			@RequestParam Optional<Integer> page, @RequestParam Optional<Integer> pageSize, Pageable pageable) {
 
-		List<Post> p = postService.getPostsWithSearchAndPagination(query, page.orElse(1), pageSize.orElse(10));
-		Page<Post> pPage = new PageImpl<Post>(p, pageable, p.size());
+		List<Post> listPost = postService.getPostsWithSearchAndPagination(query, page.orElse(1), pageSize.orElse(10));
+		Page<Post> pPage = new PageImpl<Post>(listPost, pageable, listPost.size());
 		return new ResponseEntity<Page<Post>>(pPage, HttpStatus.OK);
 	}
 
@@ -265,16 +247,16 @@ public class PostController {
 		List<Post> post = postService.getCategoriesAndPostWithSearchAndPagination(title, categoryId, name,
 				page.orElse(1), pageSize.orElse(5));
 		List<PostOut> postOut = new ArrayList<>();
-		for (Post p : post) {
-			Post p1 = postService.getById(p.getPostId());
+		for (Post post1 : post) {
+			Post post2 = postService.getById(post1.getPostId());
 			PostOut pOut = new PostOut();
 			List<Category_id_name> categories = new ArrayList<>();
 			// category_ids
-			List<Long> l = cpService.getAll(p.getPostId());
+			List<Long> listCategoryID = cpService.getAll(post1.getPostId());
 
-			pOut.setTitle(p1.getTitle());
-			pOut.setContent(p1.getContent());
-			for (Long long1 : l) {
+			pOut.setTitle(post2.getTitle());
+			pOut.setContent(post2.getContent());
+			for (Long long1 : listCategoryID) {
 				String cate = categoryService.getNameById(long1);
 				categories.add(new Category_id_name(long1, cate));
 			}

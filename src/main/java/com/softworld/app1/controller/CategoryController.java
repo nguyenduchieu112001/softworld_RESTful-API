@@ -1,7 +1,5 @@
 package com.softworld.app1.controller;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -22,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.softworld.app1.controller.form.DateToSet;
 import com.softworld.app1.model.Category;
 import com.softworld.app1.service.CategoryServiceImpl;
 
@@ -54,14 +53,10 @@ public class CategoryController {
 			MimeTypeUtils.APPLICATION_JSON_VALUE }, consumes = { MimeTypeUtils.APPLICATION_JSON_VALUE })
 	public ResponseEntity<Category> addCategory(@Valid @RequestBody Category category) {
 		Category cate = new Category();
-		Date date = new Date();
-		SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
 		try {
-			//if create_at and update_at have null value then assign value equal to current time
-			if (category.getUpdatedAt() == null)
-				category.setUpdatedAt(formatter.format(date));
-			if (category.getCreatedAt() == null)
-				category.setCreatedAt(formatter.format(date));
+			// if create_at and update_at have null value then assign value equal to current
+			// time
+			DateToSet.setDateOfCreateCategory(category);
 			cate = categoryService.save(category);
 		} catch (Exception e) {
 			e.getMessage();
@@ -69,23 +64,17 @@ public class CategoryController {
 		return new ResponseEntity<Category>(cate, HttpStatus.OK);
 	}
 
-	// update 1 category's data 
+	// update 1 category's data
 	@RequestMapping(value = "/category/edit/{id}", method = RequestMethod.PUT, produces = {
 			MimeTypeUtils.APPLICATION_JSON_VALUE }, consumes = { MimeTypeUtils.APPLICATION_JSON_VALUE })
-	public ResponseEntity<Category> updateCategory(@Valid @RequestBody Category cateForm, @PathVariable("id") long id) {
-		Category cate = categoryService.getById(id);
-		Date date = new Date();
-		SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+	public ResponseEntity<Category> updateCategory(@Valid @RequestBody Category categoryForm,
+			@PathVariable("id") long id) {
+		Category category = categoryService.getById(id);
 
-		cate.setCategoryName(cateForm.getCategoryName());
-		if (cateForm.getCreatedAt() == null)
-			cate.setUpdatedAt(formatter.format(date));
-		else cate.setCreatedAt(cateForm.getCreatedAt());
-		if (cateForm.getCreatedAt() == null)
-			cate.setCreatedAt(formatter.format(date));
-		else cate.setUpdatedAt(cateForm.getUpdatedAt());
+		category.setCategoryName(categoryForm.getCategoryName());
+		DateToSet.setDateOfUpdateCategory(category, categoryForm);
 
-		return new ResponseEntity<Category>(categoryService.save(cate), HttpStatus.OK);
+		return new ResponseEntity<Category>(categoryService.save(category), HttpStatus.OK);
 
 	}
 
@@ -99,16 +88,16 @@ public class CategoryController {
 	@GetMapping("/categories/{offset}/{pagesize}/{field}")
 	public ResponseEntity<Page<Category>> findCategoriesWithPaginationAndSorting(@PathVariable("offset") int offset,
 			@PathVariable("pagesize") int pageSize, @PathVariable String field) {
-		Page<Category> c = categoryService.findCategoriesWithPaginationAndSorting(offset, pageSize, field);
-		return new ResponseEntity<Page<Category>>(c, HttpStatus.OK);
+		Page<Category> category_page = categoryService.findCategoriesWithPaginationAndSorting(offset, pageSize, field);
+		return new ResponseEntity<Page<Category>>(category_page, HttpStatus.OK);
 	}
 
 	// find Categories with Pagination and sort
 	@GetMapping("/categories/{offset}/{pagesize}")
 	public ResponseEntity<Page<Category>> findCategoriesWithPagination(@PathVariable("offset") int offset,
 			@PathVariable("pagesize") int pageSize) {
-		Page<Category> c = categoryService.findCategoriesWithPagination(offset, pageSize);
-		return new ResponseEntity<Page<Category>>(c, HttpStatus.OK);
+		Page<Category> category_page = categoryService.findCategoriesWithPagination(offset, pageSize);
+		return new ResponseEntity<Page<Category>>(category_page, HttpStatus.OK);
 	}
 
 	// find Categories with pagination and search
@@ -116,9 +105,9 @@ public class CategoryController {
 	public ResponseEntity<Page<Category>> getCategoriesWithSearchAndPagination(@RequestParam long categoryId,
 			@RequestParam String query, @RequestParam Optional<Integer> page, @RequestParam Optional<Integer> pageSize,
 			Pageable pageable) {
-		List<Category> c = categoryService.getCategoriesWithSearchAndPagination(categoryId, query, page.orElse(1),
-				pageSize.orElse(5));
-		Page<Category> cPage = new PageImpl<Category>(c, pageable, c.size());
-		return new ResponseEntity<Page<Category>>(cPage, HttpStatus.OK);
+		List<Category> lisCategory = categoryService.getCategoriesWithSearchAndPagination(categoryId, query,
+				page.orElse(1), pageSize.orElse(5));
+		Page<Category> category_page = new PageImpl<Category>(lisCategory, pageable, lisCategory.size());
+		return new ResponseEntity<Page<Category>>(category_page, HttpStatus.OK);
 	}
 }

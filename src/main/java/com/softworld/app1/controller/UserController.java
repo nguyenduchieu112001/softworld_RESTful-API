@@ -29,8 +29,6 @@ import com.softworld.app1.controller.form.VerificationCodeUser;
 import com.softworld.app1.model.User;
 
 import java.util.Date;
-import java.util.Random;
-import java.util.concurrent.TimeUnit;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
@@ -60,13 +58,14 @@ public class UserController {
 
 	// update users with id
 	@PutMapping("/user/edit/{id}")
-	public ResponseEntity<User> updateUser(@PathVariable("id") long userID, @RequestBody User user) {
-		User u = userService.getById(userID);
-		u.setUserName(user.getUserName());
-		u.setFullName(user.getFullName());
-		u.setPassword(DigestUtils.sha1Hex(user.getPassword().toString()));
-		u.setDeleteAt(user.getDeleteAt());
-		User userUpdate = userService.save(u);
+	public ResponseEntity<User> updateUser(@PathVariable("id") long userID, @RequestBody User userForm) {
+		User user = userService.getById(userID);
+		user.setUserName(userForm.getUserName());
+		user.setFullName(userForm.getFullName());
+		user.setPassword(DigestUtils.sha1Hex(userForm.getPassword().toString()));
+		user.setEmail(userForm.getEmail());
+		user.setDeleteAt(userForm.getDeleteAt());
+		User userUpdate = userService.save(user);
 		return new ResponseEntity<User>(userUpdate, HttpStatus.OK);
 	}
 
@@ -87,22 +86,19 @@ public class UserController {
 	public Object Login(@RequestBody UserInput uInput, HttpServletRequest request) throws Exception {
 		// convert password to SHA1
 		// DigestUtils.sha1Hex(uInput.getPassword().toString())
-		UserRole ur = new UserRole();
+		UserRole userRole = new UserRole();
 
-		ur.setUsername(uInput.getUsername());
-		ur.setRolename(roleService.getRoleName(ur.getUsername()));
+		userRole.setUsername(uInput.getUsername());
+		userRole.setRolename(roleService.getRoleName(userRole.getUsername()));
 
 		User user = userService.getUserName(uInput.getUsername());
 		if (user != null && DigestUtils.sha1Hex(uInput.getPassword().toString()).equals(user.getPassword())) {
 			if (user.getDeleteAt() == null) {
-
-				request.getSession().setAttribute("userrole", ur);
-				String token = JWTToken.token(user.getFullName(), ur.getRolename(), uInput.getUsername());
-
+				request.getSession().setAttribute("userrole", userRole);
+				String token = JWTToken.token(user.getFullName(), userRole.getRolename(), uInput.getUsername());
 				return ErrorMessage.OK(token);
 			} else {
 				return ErrorMessage.methodNotAllowed("Account disabled");
-
 			}
 		} else {
 			return ErrorMessage.unAuthorized("Login information is incorrect");
@@ -113,7 +109,6 @@ public class UserController {
 	// convert JWT to json
 	@GetMapping("/convert")
 	public Object convertJwtToJson(@RequestParam String token) {
-
 		return JWTToken.payload(token);
 	}
 
@@ -131,31 +126,15 @@ public class UserController {
 			if (user.getDeleteAt() != null) {
 				return ErrorMessage.methodNotAllowed("Account disabled");
 			}
-			// random verification code
-			String verificationCode = "";
-			for (int i = 0; i < 6; i++) {
-				Random x = new Random();
-				verificationCode += x.nextInt(9);
-				verUser.setVerificationCode(verificationCode);
-				session.setAttribute("user", verUser);
 
-				Date oldDate = new Date(); // oldDate == current time
-				SimpleDateFormat formatter = new SimpleDateFormat("HH:mm:ss");
-				Date newDate = new Date(oldDate.getTime() + TimeUnit.MINUTES.toMillis(2)); // Add 2 minutes
-				verUser.setExpirationCodeTime(formatter.format(newDate));
-				session.setAttribute("user", verUser);
+			// random verification code and set Expiration Code Time
+			String verifyCode = VerificationCodeUser.randomVerificationCode(session);
 
-				userService.save(user);
-
-			}
 			// send verification code into email "email of user" with title
-			// "Mã xác thực"
-			mailSenderService.sendEmail(user.getEmail(), "Mã xác thực", verificationCode.toString());
-
+			// "Mã xác thực" and verification code
+			mailSenderService.sendEmail(user.getEmail(), "Mã xác thực", verifyCode.toString());
 			return ErrorMessage.OK("UserName correct");
-		}
-
-		else
+		} else
 			return ErrorMessage.unAuthorized("Login information is incorrect");
 	}
 
@@ -169,7 +148,7 @@ public class UserController {
 		if (session.getAttributeNames() != null)
 			verUser = (VerificationCodeUser) session.getAttribute("user");
 
-		User u = userService.getUserName(verUser.getUserName());
+		User user = userService.getUserName(verUser.getUserName());
 
 		Date date = new Date();
 		SimpleDateFormat formatter = new SimpleDateFormat("HH:mm:ss");
@@ -180,9 +159,9 @@ public class UserController {
 			if (time.compareTo(verUser.getExpirationCodeTime()) == 1) {
 				return ErrorMessage.methodNotAllowed("Verification Code is expired");
 			} else {
-				u.setPassword(DigestUtils.sha1Hex(userCode.getPassword().toString()));
-				userService.save(u);
-				return u;
+				user.setPassword(DigestUtils.sha1Hex(userCode.getPassword().toString()));
+				userService.save(user);
+				return user;
 			}
 		}
 		return ErrorMessage.unAuthorized("Verification Code is not correct");

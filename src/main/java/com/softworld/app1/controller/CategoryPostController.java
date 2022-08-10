@@ -30,30 +30,30 @@ public class CategoryPostController {
 
 	// create value for category_posts
 	@RequestMapping(value = "categorypost/create", method = RequestMethod.POST)
-	public ResponseEntity<Category_Post> addCategoryPost(@RequestBody Category_Post cp) {
-		Category_Post cate_p = null;
+	public ResponseEntity<Category_Post> addCategoryPost(@RequestBody Category_Post categoryPostForm) {
+		Category_Post cate_post = null;
 		try {
-			cate_p = cpService.save(cp);
+			cate_post = cpService.save(categoryPostForm);
 		} catch (Exception e) {
 			e.getMessage();
 		}
-		return new ResponseEntity<Category_Post>(cate_p, HttpStatus.OK);
+		return new ResponseEntity<Category_Post>(cate_post, HttpStatus.OK);
 	}
 
 	//insert value into category_posts
-	@PostMapping("/categorypost/insert")
+	@PostMapping("/categorypost/create")
 	public PostInput insert(@RequestBody PostInput json) {
 		long post_id = 0;
 		Date date = new Date();
 		SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
-		Post p = new Post(json.getTitle(), json.getContent(), formatter.format(date), formatter.format(date));
-		postService.save(p);
-		post_id = p.getPostId();
+		Post post = new Post(json.getTitle(), json.getContent(), formatter.format(date), formatter.format(date));
+		postService.save(post);
+		post_id = post.getPostId();
 
-		Category_Post cp = null;
+		Category_Post category_post = null;
 		for (int long1 : json.getCategoryIDs()) {
-			cp = new Category_Post(long1, post_id);
-			cpService.save(cp);
+			category_post = new Category_Post(long1, post_id);
+			cpService.save(category_post);
 		}
 		return json;
 	}
