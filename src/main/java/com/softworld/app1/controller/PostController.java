@@ -69,13 +69,13 @@ public class PostController {
 	// create 1 category's data into database categories (schema app1)
 	@RequestMapping(value = "post/create", method = RequestMethod.POST)
 	@PreAuthorize("hasAnyAuthority(\"ROLE_EDITOR\", \"ROLE_ADMIN\")")
-	public Object addPost(@Valid @RequestBody Post post, HttpServletRequest request) {
+	public Object addPost(@Valid @RequestBody Post postForm, HttpServletRequest request) {
 
-		Post p = new Post();
+		Post post = new Post();
 		// if create_at and update_at have null value then assign value equal to current time
-		DateToSet.setDateOfCreatePost(post);
-		p = postService.save(post);
-		return new ResponseEntity<Post>(p, HttpStatus.OK);
+		DateToSet.setDateOfCreatePost(postForm);
+		post = postService.save(postForm);
+		return new ResponseEntity<Post>(post, HttpStatus.OK);
 
 	}
 
@@ -214,13 +214,13 @@ public class PostController {
 			PostOut pOut = new PostOut();
 			List<Category_id_name> categories = new ArrayList<>();
 			// category_ids
-			List<Long> l = cpService.getAll(post.getPostId());
+			List<Long> listCategoryID = cpService.getAll(post.getPostId());
 
 			pOut.setTitle(post1.getTitle());
 			pOut.setContent(post1.getContent());
-			for (Long long1 : l) {
-				String cate = categoryService.getNameById(long1);
-				categories.add(new Category_id_name(long1, cate));
+			for (Long list : listCategoryID) {
+				String cate = categoryService.getNameById(list);
+				categories.add(new Category_id_name(list, cate));
 			}
 			pOut.setCategories(categories);
 			postOut.add(pOut);
