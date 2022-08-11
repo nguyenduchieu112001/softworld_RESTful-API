@@ -11,7 +11,6 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.util.MimeTypeUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -32,8 +31,7 @@ public class CategoryController {
 	private CategoryServiceImpl categoryService;
 
 	// Get all Categories
-	@RequestMapping(value = "categories", method = RequestMethod.GET, produces = {
-			MimeTypeUtils.APPLICATION_JSON_VALUE })
+	@RequestMapping(value = "categories", method = RequestMethod.GET)
 	public ResponseEntity<Iterable<Category>> getAllCategories(@RequestParam(required = false) String categoryName) {
 		try {
 			return new ResponseEntity<Iterable<Category>>(categoryService.findAll(), HttpStatus.OK);
@@ -49,8 +47,7 @@ public class CategoryController {
 	}
 
 	// create 1 category's data into database categories
-	@RequestMapping(value = "category/create", method = RequestMethod.POST, produces = {
-			MimeTypeUtils.APPLICATION_JSON_VALUE }, consumes = { MimeTypeUtils.APPLICATION_JSON_VALUE })
+	@RequestMapping(value = "category/create", method = RequestMethod.POST)
 	public ResponseEntity<Category> addCategory(@Valid @RequestBody Category category) {
 		Category cate = new Category();
 		try {
@@ -65,8 +62,7 @@ public class CategoryController {
 	}
 
 	// update 1 category's data
-	@RequestMapping(value = "/category/edit/{id}", method = RequestMethod.PUT, produces = {
-			MimeTypeUtils.APPLICATION_JSON_VALUE }, consumes = { MimeTypeUtils.APPLICATION_JSON_VALUE })
+	@RequestMapping(value = "/category/edit/{id}", method = RequestMethod.PUT)
 	public ResponseEntity<Category> updateCategory(@Valid @RequestBody Category categoryForm,
 			@PathVariable("id") long id) {
 		Category category = categoryService.getById(id);

@@ -41,7 +41,7 @@ public class CategoryPostController {
 	}
 
 	//insert value into category_posts
-	@PostMapping("/categorypost/create")
+	@PostMapping("/categorypost/insert")
 	public PostInput insert(@RequestBody PostInput json) {
 		long post_id = 0;
 		Date date = new Date();

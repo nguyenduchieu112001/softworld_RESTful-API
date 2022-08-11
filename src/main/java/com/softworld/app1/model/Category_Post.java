@@ -7,6 +7,7 @@ import javax.persistence.*;
 public class Category_Post {
 	
 	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name="category_id")
 	private long category_id;
 	

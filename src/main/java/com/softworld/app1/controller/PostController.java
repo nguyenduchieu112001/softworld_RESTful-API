@@ -32,6 +32,7 @@ import com.softworld.app1.controller.form.PostOut;
 import com.softworld.app1.exception.ResourceNotFoundException;
 import com.softworld.app1.controller.form.Category_id_name;
 import com.softworld.app1.controller.form.DateToSet;
+import com.softworld.app1.controller.form.FieldsToSearch;
 import com.softworld.app1.controller.form.ImageProcessing;
 import com.softworld.app1.controller.form.PostInput;
 import com.softworld.app1.model.Post;
@@ -62,17 +63,18 @@ public class PostController {
 	// find Post's data by ID
 	@GetMapping("/post/{id}")
 	@PreAuthorize("permitAll()")
-	public Object getByPostId(@PathVariable("id") long id, HttpServletRequest request) {
+	public Object getByPostId(@PathVariable("id") long id) {
 		return new ResponseEntity<Post>(postService.getById(id), HttpStatus.OK);
 	}
 
 	// create 1 category's data into database categories (schema app1)
 	@RequestMapping(value = "post/create", method = RequestMethod.POST)
 	@PreAuthorize("hasAnyAuthority(\"ROLE_EDITOR\", \"ROLE_ADMIN\")")
-	public Object addPost(@Valid @RequestBody Post postForm, HttpServletRequest request) {
+	public Object addPost(@Valid @RequestBody Post postForm) {
 
 		Post post = new Post();
-		// if create_at and update_at have null value then assign value equal to current time
+		// if create_at and update_at have null value then assign value equal to current
+		// time
 		DateToSet.setDateOfCreatePost(postForm);
 		post = postService.save(postForm);
 		return new ResponseEntity<Post>(post, HttpStatus.OK);
@@ -82,19 +84,19 @@ public class PostController {
 	// update 1 category's data into database categories(schema app1)
 	@RequestMapping(value = "/post/edit/{id}", method = RequestMethod.PUT)
 	@PreAuthorize("hasAnyAuthority(\"ROLE_EDITOR\", \"ROLE_ADMIN\")")
-	public Object updateCategory(@RequestBody Post postForm, @PathVariable("id") long id, HttpServletRequest request) {
+	public Object updateCategory(@RequestBody Post postForm, @PathVariable("id") long id) {
 
-		Post p = postService.getById(id);
-		if (p == null)
+		Post post = postService.getById(id);
+		if (post == null)
 			return ResponseEntity.notFound().build();
 		else {
-			p.setTitle(postForm.getTitle());
+			post.setTitle(postForm.getTitle());
 
-			p.setContent(postForm.getContent());
+			post.setContent(postForm.getContent());
 
-			DateToSet.setDateOfUpdatePost(postForm, postForm);
+			DateToSet.setDateOfUpdatePost(post, postForm);
 
-			Post updatePost = postService.save(p);
+			Post updatePost = postService.save(post);
 			return new ResponseEntity<Post>(updatePost, HttpStatus.OK);
 		}
 
@@ -103,13 +105,13 @@ public class PostController {
 	// delete Post's data by Id
 	@DeleteMapping("/post/delete/{id}")
 	@PreAuthorize("hasAuthority('ROLE_ADMIN')")
-	public Object deletePostById(@PathVariable("id") long id, HttpServletRequest request) throws Exception {
+	public Object deletePostById(@PathVariable("id") long id) throws Exception {
 		return new ResponseEntity<Optional<Post>>(postService.delete(id), HttpStatus.OK);
 	}
 
 	// get Post by id with categoryID and categoryName
 	@GetMapping("/get/post/{id}")
-	public PostOut getPostById(@PathVariable(value = "id") long id, HttpStatus status) {
+	public PostOut getPostById(@PathVariable(value = "id") long id) {
 
 		Post post = postService.getPostById(id);
 		if (post != null) {
@@ -181,60 +183,17 @@ public class PostController {
 		for (Long list : listCategoryID) {
 			cpService.delCategoryPost(list, postID);
 		}
-
 		cpService.delete(postID);
 		throw new ResourceNotFoundException("Delete completed!");
-	}
-
-	// find Posts with Pagination and sort
-	@GetMapping("/posts/{offset}/{pagesize}/{field}")
-	public ResponseEntity<Page<Post>> findPostsWithPaginationAndSorting(@PathVariable("offset") int offset,
-			@PathVariable("pagesize") int pageSize, @PathVariable String field) {
-		Page<Post> post_page = postService.findPostsWithPaginationAndSorting(offset, pageSize, field);
-		return new ResponseEntity<Page<Post>>(post_page, HttpStatus.OK);
-	}
-
-	// find Posts with Pagination
-	@GetMapping("/posts/{offset}/{pagesize}")
-	public ResponseEntity<Page<Post>> findPostsWithPagination(@PathVariable("offset") int offset,
-			@PathVariable("pagesize") int pageSize) {
-		Page<Post> post_page = postService.findPostsWithPagination(offset, pageSize);
-		return new ResponseEntity<Page<Post>>(post_page, HttpStatus.OK);
-	}
-
-	// get Posts with Pagination
-	@GetMapping("/get/posts/{offset}/{pageSize}")
-	public ResponseEntity<List<PostOut>> getPostsWithPagination(@PathVariable int offset, @PathVariable int pageSize) {
-		if (offset <= 0)
-			offset = 1;
-		List<Post> listPost = postService.getPostsWithPagination(offset, pageSize);
-		List<PostOut> postOut = new ArrayList<>();
-		for (Post post : listPost) {
-			Post post1 = postService.getById(post.getPostId());
-			PostOut pOut = new PostOut();
-			List<Category_id_name> categories = new ArrayList<>();
-			// category_ids
-			List<Long> listCategoryID = cpService.getAll(post.getPostId());
-
-			pOut.setTitle(post1.getTitle());
-			pOut.setContent(post1.getContent());
-			for (Long list : listCategoryID) {
-				String cate = categoryService.getNameById(list);
-				categories.add(new Category_id_name(list, cate));
-			}
-			pOut.setCategories(categories);
-			postOut.add(pOut);
-		}
-		return new ResponseEntity<List<PostOut>>(postOut, HttpStatus.OK);
-
 	}
 
 	// get Post with Pagination and search
 	@GetMapping("/posts/search")
 	public ResponseEntity<Page<Post>> getPostsWithSearchAndPagination(@RequestParam String query,
-			@RequestParam Optional<Integer> page, @RequestParam Optional<Integer> pageSize, Pageable pageable) {
+			@RequestParam FieldsToSearch fieldsToSearch, Pageable pageable) {
 
-		List<Post> listPost = postService.getPostsWithSearchAndPagination(query, page.orElse(1), pageSize.orElse(10));
+		List<Post> listPost = postService.getPostsWithSearchAndPagination(query, fieldsToSearch.getPage().orElse(1),
+				fieldsToSearch.getPageSize().orElse(10));
 		Page<Post> pPage = new PageImpl<Post>(listPost, pageable, listPost.size());
 		return new ResponseEntity<Page<Post>>(pPage, HttpStatus.OK);
 	}
@@ -242,10 +201,10 @@ public class PostController {
 	// get Categories and Posts with pagination and search
 	@GetMapping("/search")
 	public ResponseEntity<Page<PostOut>> getCategoriesAndPostWithSearchAndPagination(@RequestParam String title,
-			@RequestParam long categoryId, @RequestParam String name, @RequestParam Optional<Integer> page,
-			@RequestParam Optional<Integer> pageSize, Pageable pageable) {
+			@RequestParam long categoryId, @RequestParam String name, @RequestParam FieldsToSearch fieldsToSearch,
+			Pageable pageable) {
 		List<Post> post = postService.getCategoriesAndPostWithSearchAndPagination(title, categoryId, name,
-				page.orElse(1), pageSize.orElse(5));
+				fieldsToSearch.getPage().orElse(1), fieldsToSearch.getPageSize().orElse(5));
 		List<PostOut> postOut = new ArrayList<>();
 		for (Post post1 : post) {
 			Post post2 = postService.getById(post1.getPostId());
