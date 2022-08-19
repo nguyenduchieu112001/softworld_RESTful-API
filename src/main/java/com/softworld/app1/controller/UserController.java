@@ -37,7 +37,7 @@ import javax.servlet.http.HttpSession;
 @RequestMapping("/api")
 public class UserController {
 
-	@Autowired
+	@Autowired(required = false)
 	private UserService userService;
 
 	@Autowired

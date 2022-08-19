@@ -51,7 +51,7 @@ public class CategoryPostController {
 		post_id = post.getPostId();
 
 		Category_Post category_post = null;
-		for (int long1 : json.getCategoryIDs()) {
+		for (Long long1 : json.getCategoryIDs()) {
 			category_post = new Category_Post(long1, post_id);
 			cpService.save(category_post);
 		}

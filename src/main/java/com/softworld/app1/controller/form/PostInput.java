@@ -7,7 +7,7 @@ public class PostInput {
 
 	private String title;
 	private String content;
-	private List<Integer> categoryIDs;
+	private List<Long> categoryIDs;
 	
 	
 	public String getTitle() {
@@ -22,17 +22,17 @@ public class PostInput {
 	public void setContent(String content) {
 		this.content = content;
 	}
-	public List<Integer> getCategoryIDs() {
+	public List<Long> getCategoryIDs() {
 		return categoryIDs;
 	}
-	public void setCategoryIDs(List<Integer> categoryIDs) {
+	public void setCategoryIDs(List<Long> categoryIDs) {
 		this.categoryIDs = categoryIDs;
 	}
 	public PostInput() {
 		
 	}
 	
-	public PostInput(String title, String content, List<Integer> categoryIDs) {
+	public PostInput(String title, String content, List<Long> categoryIDs) {
 		this.title = title;
 		this.content = content;
 		this.categoryIDs = categoryIDs;

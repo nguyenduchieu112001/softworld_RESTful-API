@@ -1,6 +1,5 @@
 package com.softworld.app1.service;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -43,17 +42,9 @@ public class CategoryPostServiceImpl implements ICommonService<Category_Post>{
 		return Optional.empty();
 	}
 
-//	public List<Post> getCategoryPost(long postid) {
-//		return cpRepository.getCategoryPost(postid);
-//	}
 	
-	public List<Long> getAll(long postId){
-		List<Long> p = new ArrayList<>();
-		List<Long> cp = cpRepository.getCategoryIDFromCategoryPost(postId);
-		for (Long long1 : cp) {
-			p.add(long1);
-		}
-		return p;
+	public List<Long> getCategoryIDFromCategoryPost(long postId){
+		return cpRepository.getCategoryIDFromCategoryPost(postId);
 	}
 
 	public void delCategoryPost(long categoryID, long postID) {

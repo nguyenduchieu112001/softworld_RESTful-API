@@ -86,17 +86,5 @@ public class Post {
 		this.updatedAt = updatedAt;
 	}
 
-//	public void insertPost(Category c) {
-//		category.add(c);
-//		
-//	}
-//
-//	public void removeCategory(long categoryId) {
-//		Category cate = this.category.stream().filter(t -> t.getCategoryID()== categoryId).findFirst().orElse(null);
-//		if(cate != null) {
-//			this.category.remove(cate);
-//			cate.getPost().remove(this);
-//		}
-//	}
 
 }

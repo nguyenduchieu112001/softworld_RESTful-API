@@ -32,6 +32,7 @@ import com.softworld.app1.controller.form.PostOut;
 import com.softworld.app1.exception.ResourceNotFoundException;
 import com.softworld.app1.controller.form.Category_id_name;
 import com.softworld.app1.controller.form.DateToSet;
+import com.softworld.app1.controller.form.ErrorMessage;
 import com.softworld.app1.controller.form.FieldsToSearch;
 import com.softworld.app1.controller.form.ImageProcessing;
 import com.softworld.app1.controller.form.PostInput;
@@ -44,19 +45,19 @@ import com.softworld.app1.service.PostServiceImpl;
 @RequestMapping("/api")
 public class PostController {
 
-	@Autowired
+	@Autowired(required = false)
 	private PostServiceImpl postService;
 
-	@Autowired
+	@Autowired(required = false)
 	private CategoryPostServiceImpl cpService;
 
-	@Autowired
+	@Autowired(required = false)
 	private CategoryServiceImpl categoryService;
 
 	// get all Post's data
 	@RequestMapping(value = "posts", method = RequestMethod.GET)
 	@PreAuthorize("permitAll()")
-	public Object getAllPosts(HttpServletRequest request) {
+	public Object getAllPosts() {
 		return new ResponseEntity<Iterable<Post>>(postService.findAll(), HttpStatus.OK);
 	}
 
@@ -118,7 +119,7 @@ public class PostController {
 			PostOut postOut = new PostOut();
 			List<Category_id_name> categories = new ArrayList<>();
 			// category_ids
-			List<Long> listCategoryID = cpService.getAll(id);
+			List<Long> listCategoryID = cpService.getCategoryIDFromCategoryPost(id);
 
 			postOut.setTitle(post.getTitle());
 			postOut.setContent(post.getContent());
@@ -132,6 +133,21 @@ public class PostController {
 			throw new ResourceNotFoundException("Post not exist with id: " + id);
 
 	}
+	
+	//create Post with categoryID and categoryName using PostInput
+	@PostMapping("create/post")
+	public Object createPost(@RequestBody(required = false) PostInput postInputForm) {
+		Post newPost = new Post(postInputForm.getTitle(), postInputForm.getContent(), null, null);
+		DateToSet.setDateOfCreatePost(newPost);
+		postService.save(newPost);
+		
+		for(Long list : postInputForm.getCategoryIDs()) {
+			cpService.insertCategoryPost(list, newPost.getPostId());
+		}
+
+		return ErrorMessage.OK("Create completed");
+	}
+	
 
 	// update Post by id with categoryID and categoryName using PostInput
 	@PutMapping("/update/post/{id}")
@@ -149,19 +165,19 @@ public class PostController {
 
 			postOut.setTitle(post.getTitle());
 			postOut.setContent(post.getContent());
-			List<Long> listCategoryID = cpService.getAll(id);
+			List<Long> listCategoryID = cpService.getCategoryIDFromCategoryPost(id);
 
 			for (long list : listCategoryID) {
 				cpService.delCategoryPost(list, id);
 			}
 
-			List<Integer> item = new ArrayList<>();
-			for (int listCategoryIDs : json.getCategoryIDs()) {
+			List<Long> item = new ArrayList<>();
+			for (Long listCategoryIDs : json.getCategoryIDs()) {
 				cpService.insertCategoryPost(listCategoryIDs, id);
 				item.add(listCategoryIDs);
 			}
 
-			for (Integer lists : item) {
+			for (Long lists : item) {
 				String cate = categoryService.getNameById(lists);
 				categories.add(new Category_id_name(lists, cate));
 			}
@@ -177,7 +193,7 @@ public class PostController {
 	// delete Post by id with categoryID and categoryName
 	@DeleteMapping("/delete/post/{id}")
 	public void delPost(@PathVariable("id") long postID) throws Exception {
-		List<Long> listCategoryID = cpService.getAll(postID);
+		List<Long> listCategoryID = cpService.getCategoryIDFromCategoryPost(postID);
 		if (listCategoryID.size() == 0)
 			throw new ResourceNotFoundException("Post not exist have list categoris with id:" + postID);
 		for (Long list : listCategoryID) {
@@ -211,7 +227,7 @@ public class PostController {
 			PostOut pOut = new PostOut();
 			List<Category_id_name> categories = new ArrayList<>();
 			// category_ids
-			List<Long> listCategoryID = cpService.getAll(post1.getPostId());
+			List<Long> listCategoryID = cpService.getCategoryIDFromCategoryPost(post1.getPostId());
 
 			pOut.setTitle(post2.getTitle());
 			pOut.setContent(post2.getContent());

@@ -32,7 +32,9 @@ public class ImageProcessing {
 
 				String fileDownloadUrl = ServletUriComponentsBuilder.fromCurrentContextPath().path("/api/downloadFile/")
 						.path(file.getOriginalFilename()).toUriString();
-
+//				System.out.println(file.getName());
+//				System.out.println(file.getOriginalFilename());
+//				System.out.println(file.getContentType());
 				return ErrorMessage.OK(fileDownloadUrl);
 			}
 		}

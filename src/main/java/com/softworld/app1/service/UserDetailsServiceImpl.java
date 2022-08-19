@@ -13,10 +13,10 @@ import com.softworld.app1.repository.IUserRepository;
 @Service
 public class UserDetailsServiceImpl implements UserDetailsService {
 
-	@Autowired
+	@Autowired(required = false)
 	private IUserRepository userRepository;
 	
-	@Autowired
+	@Autowired(required = false)
 	private IRoleRepository roleRepository;
 
 	@Override
