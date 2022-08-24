@@ -1,7 +1,6 @@
 package com.softworld.app1.service;
 
 import java.util.List;
-import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -37,12 +36,8 @@ public class CategoryServiceImpl implements ICommonService<Category> {
 								new ResourceNotFoundException("Cateogry not found by id:" +id));
 	}
 
-	public Optional<Category> delete(long id) throws Exception {
-		categoryRepository.findById(id).orElseThrow(() ->
-						new ResourceNotFoundException("Category not available!"));
-
+	public void delete(long id){
 		categoryRepository.deleteById(id);
-		throw new Exception("Delete completed!");
 	}
 	
 	public String getNameById(long categoryId) {

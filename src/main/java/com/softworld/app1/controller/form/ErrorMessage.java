@@ -13,6 +13,16 @@ public class ErrorMessage {
 
 		return codeMessage;
 	}
+	
+	public static Code_Message Created(String message) {
+		Code_Message codeMessage = new Code_Message();
+		codeMessage.setTimestamp(new Date());
+		codeMessage.setStatus(201);
+		codeMessage.setError("Created");
+		codeMessage.setMessage(message);
+
+		return codeMessage;
+	}
 
 	public static Code_Message methodNotAllowed(String message) {
 		Code_Message codeMessage = new Code_Message();

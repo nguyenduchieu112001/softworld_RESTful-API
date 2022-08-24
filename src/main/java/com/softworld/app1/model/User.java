@@ -1,11 +1,9 @@
 package com.softworld.app1.model;
 
-
 import javax.persistence.*;
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Size;
-
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonFormat.Shape;
@@ -14,11 +12,10 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Entity
-@Table(name = "users", uniqueConstraints = @UniqueConstraint(columnNames = {"username", "email"}))
+@Table(name = "users", uniqueConstraints = @UniqueConstraint(columnNames = { "username", "email" }))
 @Getter
 @Setter
-public class User{
-
+public class User {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -46,7 +43,7 @@ public class User{
 	@Column(name = "delete_at")
 	@JsonFormat(pattern = "yyyy-MM-dd", shape = Shape.STRING)
 	private String deleteAt;
-	
+
 	@NotBlank
 	@Email
 	@Column(name = "email")
@@ -56,48 +53,12 @@ public class User{
 
 	}
 
-	public User(
-			@NotBlank @Size(min = 2, max = 20, message = "username should have atleast 2 characters and no more than 20 characters") String userName,
-			@NotBlank @Size(min = 7, max = 50, message = "fullname should have atleast 8 characters and no more than 50 characters") String fullName,
-			@NotBlank @Size(min = 8, message = "password should have atleast 8 characters") String password,
-			String deleteAt, @NotBlank @Email String email) {
-		super();
+	public User(String userName, String fullName, String password, String deleteAt, @NotBlank @Email String email) {
 		this.userName = userName;
 		this.fullName = fullName;
 		this.password = password;
 		this.deleteAt = deleteAt;
 		this.email = email;
 	}
-
-//	@Override
-//	public Collection<? extends GrantedAuthority> getAuthorities() {
-//		return null;
-//	}
-//
-//	@Override
-//	public String getUsername() {
-//		return this.getUsername();
-//	}
-//
-//	@Override
-//	public boolean isAccountNonExpired() {
-//		return true;
-//	}
-//
-//	@Override
-//	public boolean isAccountNonLocked() {
-//		return true;
-//	}
-//
-//	@Override
-//	public boolean isCredentialsNonExpired() {
-//		return true;
-//	}
-//
-//	@Override
-//	public boolean isEnabled() {
-//		return true;
-//	}
-
 
 }

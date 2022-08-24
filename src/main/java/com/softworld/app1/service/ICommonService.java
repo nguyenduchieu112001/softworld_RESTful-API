@@ -1,6 +1,5 @@
 package com.softworld.app1.service;
 
-import java.util.Optional;
 
 public interface ICommonService<T> {
 	
@@ -12,6 +11,6 @@ public interface ICommonService<T> {
 
 	public T getById(long id);
 	
-	public Optional<T> delete(long id) throws Exception;
+	public void delete(long id);
 
 }

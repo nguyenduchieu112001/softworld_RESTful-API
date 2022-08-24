@@ -1,7 +1,6 @@
 package com.softworld.app1.service;
 
 import java.util.List;
-import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -10,39 +9,16 @@ import com.softworld.app1.model.Category_Post;
 import com.softworld.app1.repository.ICategoryPostRepository;
 
 @Service
-public class CategoryPostServiceImpl implements ICommonService<Category_Post>{
+public class CategoryPostServiceImpl{
 
 	@Autowired
 	private ICategoryPostRepository cpRepository;
 	
-	@Override
-	public Iterable<Category_Post> findAll() {
-		return cpRepository.findAll();
-	}
 
-	@Override
 	public Category_Post save(Category_Post t) {
 		return cpRepository.save(t);
 	}
 
-	@Override
-	public Category_Post update(Category_Post t, long id) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Category_Post getById(long id) {
-		return cpRepository.findById(id).get();
-	}
-
-	@Override
-	public Optional<Category_Post> delete(long id) throws Exception {
-		// TODO Auto-generated method stub
-		return Optional.empty();
-	}
-
-	
 	public List<Long> getCategoryIDFromCategoryPost(long postId){
 		return cpRepository.getCategoryIDFromCategoryPost(postId);
 	}

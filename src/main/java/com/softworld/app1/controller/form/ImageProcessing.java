@@ -17,8 +17,6 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 public class ImageProcessing {
 
-	String Path_Directory = "src\\main\\resources\\static\\image";
-
 	public static Code_Message uploadImage(MultipartFile file) throws IOException {
 		String[] photoTail = file.getOriginalFilename().split("\\.");
 		String[] imageTails = { "JPG", "GIF", "PNG" };

@@ -20,6 +20,7 @@ import com.softworld.app1.service.EmailSenderService;
 import com.softworld.app1.service.RoleServiceImpl;
 import com.softworld.app1.service.UserService;
 
+
 import com.softworld.app1.controller.form.ErrorMessage;
 import com.softworld.app1.controller.form.JWTToken;
 import com.softworld.app1.controller.form.UserCode;
@@ -32,6 +33,7 @@ import java.util.Date;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
+import javax.validation.Valid;
 
 @RestController
 @RequestMapping("/api")
@@ -40,15 +42,15 @@ public class UserController {
 	@Autowired(required = false)
 	private UserService userService;
 
-	@Autowired
+	@Autowired(required = false)
 	private EmailSenderService mailSenderService;
 
-	@Autowired
+	@Autowired(required = false)
 	private RoleServiceImpl roleService;
 
 	// create User
 	@PostMapping("/user/create")
-	public ResponseEntity<User> addUser(@RequestBody User user) throws NoSuchAlgorithmException {
+	public ResponseEntity<User> addUser(@Valid @RequestBody User user) throws NoSuchAlgorithmException {
 
 		User u = new User(user.getUserName(), user.getFullName(), DigestUtils.sha1Hex(user.getPassword().toString()),
 				user.getDeleteAt(), user.getEmail());
@@ -83,11 +85,11 @@ public class UserController {
 
 	// check user and password (login)
 	@PostMapping("/login")
-	public Object Login(@RequestBody UserInput uInput, HttpServletRequest request) throws Exception {
+	public Object Login(@Valid @RequestBody UserInput uInput, HttpServletRequest request) throws Exception {
 		// convert password to SHA1
 		// DigestUtils.sha1Hex(uInput.getPassword().toString())
 		UserRole userRole = new UserRole();
-
+		//set user with role
 		userRole.setUsername(uInput.getUsername());
 		userRole.setRolename(roleService.getRoleName(userRole.getUsername()));
 
@@ -95,7 +97,7 @@ public class UserController {
 		if (user != null && DigestUtils.sha1Hex(uInput.getPassword().toString()).equals(user.getPassword())) {
 			if (user.getDeleteAt() == null) {
 				request.getSession().setAttribute("userrole", userRole);
-				String token = JWTToken.token(user.getFullName(), userRole.getRolename(), uInput.getUsername());
+				String token = JWTToken.token(user.getFullName(), userRole.getRolename(), user.getUserName());
 				return ErrorMessage.OK(token);
 			} else {
 				return ErrorMessage.methodNotAllowed("Account disabled");
@@ -103,7 +105,6 @@ public class UserController {
 		} else {
 			return ErrorMessage.unAuthorized("Login information is incorrect");
 		}
-
 	}
 
 	// convert JWT to json

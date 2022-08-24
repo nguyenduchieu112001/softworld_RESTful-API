@@ -20,6 +20,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.softworld.app1.controller.form.DateToSet;
+import com.softworld.app1.controller.form.ErrorMessage;
+import com.softworld.app1.exception.ResourceNotFoundException;
 import com.softworld.app1.model.Category;
 import com.softworld.app1.service.CategoryServiceImpl;
 
@@ -76,8 +78,14 @@ public class CategoryController {
 
 	// delete category by Id
 	@RequestMapping(value = "/category/delete/{id}", method = RequestMethod.DELETE)
-	public ResponseEntity<Optional<Category>> deleteCategory(@PathVariable(value = "id") Long id) throws Exception {
-		return new ResponseEntity<Optional<Category>>(categoryService.delete(id), HttpStatus.OK);
+	public Object deleteCategory(@PathVariable(value = "id") Long id) throws Exception {
+//		return new ResponseEntity<Optional<Category>>(categoryService.delete(id), HttpStatus.OK);
+		if(categoryService.getById(id) == null)
+			return new ResourceNotFoundException("Category not available!");
+		else {
+			categoryService.delete(id);
+			return ErrorMessage.Created("Create completed");
+		}
 	}
 
 	// find Categories with Pagination and sort

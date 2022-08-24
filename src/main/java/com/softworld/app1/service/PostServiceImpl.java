@@ -1,7 +1,6 @@
 package com.softworld.app1.service;
 
 import java.util.List;
-import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -34,11 +33,8 @@ public class PostServiceImpl implements ICommonService<Post> {
 	}
 
 	@Override
-	public Optional<Post> delete(long id) throws Exception {
-		postRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Post not available!"));
-
+	public void delete(long id){
 		postRepository.deleteById(id);
-		throw new Exception("Delete completed!");
 	}
 
 	@Override

@@ -1,6 +1,5 @@
 package com.softworld.app1.service;
 
-import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -40,11 +39,8 @@ public class UserService implements ICommonService<User>{
 	}
 
 	@Override
-	public Optional<User> delete(long id) throws Exception {
-		userRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Post not available!"));
-
+	public void delete(long id){
 		userRepository.deleteById(id);
-		throw new Exception("Delete completed!");
 	}
 
 	public User getUserName(String userName) {
