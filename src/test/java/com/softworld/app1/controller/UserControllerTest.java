@@ -56,7 +56,6 @@ public class UserControllerTest {
 	private EmailSenderService mailSenderService;
 	@MockBean
 	private RoleServiceImpl roleService;
-
 	@BeforeEach
 	public void setup() {
 		mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
@@ -129,7 +128,7 @@ public class UserControllerTest {
 
 	@Test
 	@DisplayName("Test login")
-	public void asssert_that_login_successful() throws Exception {
+	public String asssert_that_login_successful() throws Exception {
 		User user = new User("user", "nguyen van a", DigestUtils.sha1Hex("12345678"), null, "nguyenvana@gmail.com");
 		user.setUserID(1L);
 		UserRole userRole = new UserRole("user", "user");
@@ -145,13 +144,14 @@ public class UserControllerTest {
 
 		JsonObject json = new JsonParser().parse(mvcResult.getResponse().getContentAsString()).getAsJsonObject();
 		Assertions.assertTrue(json.get("error").getAsString().equals("OK"));
+		String token = json.get("message").getAsString();
+		return token;
 	}
 
 	@Test
 	@DisplayName("Test convert JWT to json")
 	public void assert_that_convert_jwt_to_json() throws Exception {
-		String token = "eyJhbGciOiJIUzUxMiJ9.eyJmdWxsTmFtZSI6Ik5ndXllbiBNaW5oIE4iLCJyb2xlIjoiUk9MRV9BRE1JTiIsInN1YiI6InNhIiwiaWF0IjoxNjYxMzI2NTUzLCJleHAiOjg4MDYxMzI2NTUzfQ.Tln9VX5IJC7WDTqlvgCYnv5QbiqwwrgmGuHPBSeIDn5fKMYpCiMPfkjF3xW8CGF9Qmz_hs-L07uhgb1ThPuUyg";
-		
+		String token = asssert_that_login_successful();
 		MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.get("/api/convert")
 				.param("token", token)
 				.contentType(MediaType.APPLICATION_JSON))
@@ -159,7 +159,7 @@ public class UserControllerTest {
 				.andReturn();
 		
 		JsonObject json = new JsonParser().parse(mvcResult.getResponse().getContentAsString()).getAsJsonObject();
-		Assertions.assertTrue(json.get("fullName").getAsString().equals("Nguyen Minh N"));
+		Assertions.assertTrue(json.get("fullName").getAsString().equals("nguyen van a"));
 	}
 	
 	
