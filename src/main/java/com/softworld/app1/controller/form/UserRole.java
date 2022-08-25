@@ -19,6 +19,4 @@ public class UserRole {
 		this.username = username;
 		this.rolename = rolename;
 	}
-	
-	
 }

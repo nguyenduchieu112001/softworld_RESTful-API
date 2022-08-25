@@ -6,6 +6,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,7 +36,6 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.softworld.app1.controller.form.PostInput;
 import com.softworld.app1.model.Category;
-import com.softworld.app1.model.Category_Post;
 import com.softworld.app1.model.Post;
 import com.softworld.app1.service.CategoryPostServiceImpl;
 import com.softworld.app1.service.CategoryServiceImpl;
@@ -63,7 +63,7 @@ public class PostControllerTest {
 	public void setup() {
 		mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
 	}
-	
+
 	// truyen du lieu cho mockMvc
 	public static String asJsonString(final Object obj) {
 		try {
@@ -156,8 +156,8 @@ public class PostControllerTest {
 		when(postService.getById(any(Long.class))).thenReturn(post);
 		when(postService.save(any(Post.class))).thenReturn(newPost);
 
-		MvcResult mvcResult = mockMvc
-				.perform(MockMvcRequestBuilders.put("/api/post/edit/{id}", post.getPostId()).content(asJsonString(newPost))
+		MvcResult mvcResult = mockMvc.perform(
+				MockMvcRequestBuilders.put("/api/post/edit/{id}", post.getPostId()).content(asJsonString(newPost))
 						.contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON))
 				.andDo(MockMvcResultHandlers.print()).andReturn();
 
@@ -167,9 +167,9 @@ public class PostControllerTest {
 	}
 
 	@Test
-	@DisplayName("Test delete Post")
+	@DisplayName("Test delete Post successful")
 	@WithMockUser(username = "sa", authorities = "ROLE_ADMIN")
-	public void assert_that_post_id_delete_successfull() throws Exception {
+	public void assert_that_post_is_delete_successfully() throws Exception {
 		Post post = new Post("ab", "ab", "2020-04-04", "2020-04-04");
 		post.setPostId(1L);
 
@@ -183,9 +183,22 @@ public class PostControllerTest {
 	}
 
 	@Test
-	@DisplayName("Test get Post by id with categoryName and categoryID")
+	@DisplayName("Test delete Post unsuccessful")
 	@WithMockUser(username = "sa", authorities = "ROLE_ADMIN")
-	public void assert_that_get_post_by_id_with_categoryName_categoryID() throws Exception {
+	public void assert_that_post_is_delete_unsuccessfuly() throws Exception {
+		when(postService.getById(any(Long.class))).thenReturn(null);
+
+		MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.delete("/api/post/delete/{id}", 1L))
+				.andDo(MockMvcResultHandlers.print()).andReturn();
+
+		JsonObject json = new JsonParser().parse(mvcResult.getResponse().getContentAsString()).getAsJsonObject();
+		Assertions.assertTrue(json.get("message").getAsString().equals("Post not available!"));
+	}
+
+	@Test
+	@DisplayName("Test get successful Post by id with categoryName and categoryID successful")
+	@WithMockUser(username = "sa", authorities = "ROLE_ADMIN")
+	public void assert_that_get_successful_post_by_id_with_categoryName_categoryID() throws Exception {
 		Post post = new Post("abc", "abc", "2020-09-09", "2020-09-09");
 		post.setPostId(1L);
 
@@ -219,6 +232,19 @@ public class PostControllerTest {
 	}
 
 	@Test
+	@DisplayName("Test get unsuccessful Post by id with categoryName, categoryId")
+	public void assert_that_get_unsuccessful_post_by_id_with_categoryName_categoryID() throws Exception {
+		when(postService.getById(any(Long.class))).thenReturn(null);
+
+		MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.get("/api/get/post/{id}", 1L))
+				.andDo(MockMvcResultHandlers.print()).andReturn();
+
+		JsonObject json = new JsonParser().parse(mvcResult.getResponse().getContentAsString()).getAsJsonObject();
+		Assertions.assertTrue(json.get("message").getAsString().equals("Post not exist with id: 1"));
+
+	}
+
+	@Test
 	@DisplayName("Test create Post with CategoryId")
 	@WithMockUser(username = "sa", authorities = "ROLE_ADMIN")
 	public void assert_that_create_post_with_categoryIDs() throws Exception {
@@ -238,9 +264,9 @@ public class PostControllerTest {
 	}
 
 	@Test
-	@DisplayName("Test update Post by id with categoryID and categoryName using PostInput")
+	@DisplayName("Test update successful Post by id with categoryID and categoryName using PostInput")
 	@WithMockUser(username = "sa", authorities = "ROLE_ADMIN")
-	public void assert_that_update_post_by_id_witn_categoryID_and_categoryName() throws Exception {
+	public void assert_that_update_successful_post_by_id_witn_categoryID_and_categoryName() throws Exception {
 
 		Post post = new Post("ab", "ab", null, null);
 		post.setPostId(1L);
@@ -249,8 +275,8 @@ public class PostControllerTest {
 		category_1.setCategoryID(1L);
 		Category category_2 = new Category("Udyr", null, null);
 		category_2.setCategoryID(2L);
-		Category_Post category_post_1 = new Category_Post(category_1.getCategoryID(), post.getPostId());
-		Category_Post category_post_2 = new Category_Post(category_2.getCategoryID(), post.getPostId());
+//		Category_Post category_post_1 = new Category_Post(category_1.getCategoryID(), post.getPostId());
+//		Category_Post category_post_2 = new Category_Post(category_2.getCategoryID(), post.getPostId());
 
 		Category category_3 = new Category("Luffy", null, null);
 		category_3.setCategoryID(3L);
@@ -287,9 +313,24 @@ public class PostControllerTest {
 	}
 
 	@Test
-	@DisplayName("Test delete Post by id with categoryID and categoryName")
+	@DisplayName("Test update unsuccessful Post by id with categoryName and categoryId")
+	public void assert_that_update_unsuccessful_post_by_id_with_categoryName_categoryId() throws Exception {
+		when(postService.getById(any(Long.class))).thenReturn(null);
+
+		MvcResult mvcResult = mockMvc
+				.perform(MockMvcRequestBuilders.put("/api/update/post/{id}", 1L)
+						.content(asJsonString(new PostInput("ba", "ba", Arrays.asList(1L, 2L))))
+						.contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON))
+				.andDo(MockMvcResultHandlers.print()).andReturn();
+
+		JsonObject json = new JsonParser().parse(mvcResult.getResponse().getContentAsString()).getAsJsonObject();
+		Assertions.assertTrue(json.get("message").getAsString().equals("Post not exist with id: 1"));
+	}
+
+	@Test
+	@DisplayName("Test delete successful Post by id with categoryID and categoryName")
 	@WithMockUser(username = "sa", authorities = "ROLE_ADMIN")
-	public void assert_that_delete_post_by_id_with_categoryId_and_categoryName() throws Exception {
+	public void assert_that_delete_successfull_post_by_id_with_categoryId_and_categoryName() throws Exception {
 		Post post = new Post();
 		post.setPostId(1L);
 
@@ -306,12 +347,26 @@ public class PostControllerTest {
 
 		when(cpService.getCategoryIDFromCategoryPost(any(Long.class))).thenReturn(listCategoryIDs);
 
-		MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.delete("/api/delete/post/{id}", 1L))
+		MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.delete("/api/delete/post/{id}", post.getPostId()))
 				.andDo(MockMvcResultHandlers.print()).andReturn();
 
 		JsonObject json = new JsonParser().parse(mvcResult.getResponse().getContentAsString()).getAsJsonObject();
 		Assertions.assertTrue(json.get("message").getAsString().equals("Delete completed"));
 
+	}
+	
+	@Test
+	@DisplayName("Test delete unsuccessfull Post by id with categoryName and categoryId")
+	public void assert_that_delete_unsuccessful_post_by_id_with_categoryId_categoryName() throws Exception {
+		List<Long> listCategoryIDs = new ArrayList<Long>();
+		
+		when(cpService.getCategoryIDFromCategoryPost(any(Long.class))).thenReturn(listCategoryIDs);
+		
+		MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.delete("/api/delete/post/{id}", 1L))
+				.andDo(MockMvcResultHandlers.print()).andReturn();
+		
+		JsonObject json = new JsonParser().parse(mvcResult.getResponse().getContentAsString()).getAsJsonObject();
+		Assertions.assertTrue(json.get("message").getAsString().equals("Post not exist have list categoris with id: 1"));
 	}
 
 	@Test

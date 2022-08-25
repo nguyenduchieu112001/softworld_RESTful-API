@@ -73,8 +73,7 @@ public class PostController {
 	public Object addPost(@Valid @RequestBody Post postForm) {
 
 		Post post = new Post();
-		// if create_at and update_at have null value then assign value equal to current
-		// time
+		// if create_at and update_at have null value then assign value equal to current time
 		DateToSet.setDateOfCreatePost(postForm);
 		post = postService.save(postForm);
 		return new ResponseEntity<Post>(post, HttpStatus.OK);
@@ -108,7 +107,7 @@ public class PostController {
 	public Object deletePostById(@PathVariable("id") long id) throws Exception {
 //		return new ResponseEntity<Optional<Post>>(postService.delete(id), HttpStatus.OK);
 		if (postService.getById(id) == null)
-			return new ResourceNotFoundException("Post not available!");
+			return ErrorMessage.notFount("Post not available!");
 		else {
 			postService.delete(id);
 			return ErrorMessage.OK("Delete completed");
@@ -191,7 +190,7 @@ public class PostController {
 
 			return postOut;
 		} else {
-			throw new ResourceNotFoundException("Post not exist id:" + id);
+			throw new ResourceNotFoundException("Post not exist with id: " + id);
 		}
 
 	}
@@ -201,7 +200,7 @@ public class PostController {
 	public Object delPost(@PathVariable("id") long postID) throws Exception {
 		List<Long> listCategoryID = cpService.getCategoryIDFromCategoryPost(postID);
 		if (listCategoryID.size() == 0)
-			return new ResourceNotFoundException("Post not exist have list categoris with id:" + postID);
+			return ErrorMessage.notFount("Post not exist have list categoris with id: " + postID);
 		for (Long list : listCategoryID) {
 			cpService.delCategoryPost(list, postID);
 		}

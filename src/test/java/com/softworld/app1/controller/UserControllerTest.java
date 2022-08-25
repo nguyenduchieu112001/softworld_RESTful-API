@@ -53,8 +53,6 @@ public class UserControllerTest {
 	@MockBean
 	private UserService userService;
 	@MockBean
-	private EmailSenderService mailSenderService;
-	@MockBean
 	private RoleServiceImpl roleService;
 	@BeforeEach
 	public void setup() {
@@ -127,7 +125,7 @@ public class UserControllerTest {
 	}
 
 	@Test
-	@DisplayName("Test login")
+	@DisplayName("Test login successfully")
 	public String asssert_that_login_successful() throws Exception {
 		User user = new User("user", "nguyen van a", DigestUtils.sha1Hex("12345678"), null, "nguyenvana@gmail.com");
 		user.setUserID(1L);
@@ -146,6 +144,48 @@ public class UserControllerTest {
 		Assertions.assertTrue(json.get("error").getAsString().equals("OK"));
 		String token = json.get("message").getAsString();
 		return token;
+	}
+	@Test
+	@DisplayName("Test login with account disable")
+	public void assert_that_login_with_account_disable() throws Exception {
+		SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+		Date now = new Date();
+		
+		User user = new User("user", "nguyen van a", DigestUtils.sha1Hex("12345678"), formatter.format(now), "nguyenvana@gmail.com");
+		user.setUserID(1L);
+		UserRole userRole = new UserRole("user", "user");
+
+		when(userService.getUserName(any(String.class))).thenReturn(user);
+		when(roleService.getRoleName(any(String.class))).thenReturn(userRole.getUsername());
+
+		MvcResult mvcResult = mockMvc
+				.perform(MockMvcRequestBuilders.post("/api/login")
+						.content(asJsonString(new UserInput("user", "12345678")))
+						.contentType(MediaType.APPLICATION_JSON_UTF8).accept(MediaType.APPLICATION_JSON_UTF8))
+				.andDo(MockMvcResultHandlers.print()).andReturn();
+
+		JsonObject json = new JsonParser().parse(mvcResult.getResponse().getContentAsString()).getAsJsonObject();
+		Assertions.assertTrue(json.get("message").getAsString().equals("Account disabled"));
+	}
+	
+	@Test
+	@DisplayName("Test login with information login is incorrect")
+	public void assert_that_login_with_information_login_is_incorrect() throws Exception {
+		User user = new User("user", "nguyen van a", DigestUtils.sha1Hex("12345678"), null, "nguyenvana@gmail.com");
+		user.setUserID(1L);
+		UserRole userRole = new UserRole("user", "user");
+
+		when(userService.getUserName(any(String.class))).thenReturn(user);
+		when(roleService.getRoleName(any(String.class))).thenReturn(userRole.getUsername());
+
+		MvcResult mvcResult = mockMvc
+				.perform(MockMvcRequestBuilders.post("/api/login")
+						.content(asJsonString(new UserInput("user", "87654321")))
+						.contentType(MediaType.APPLICATION_JSON_UTF8).accept(MediaType.APPLICATION_JSON_UTF8))
+				.andDo(MockMvcResultHandlers.print()).andReturn();
+
+		JsonObject json = new JsonParser().parse(mvcResult.getResponse().getContentAsString()).getAsJsonObject();
+		Assertions.assertTrue(json.get("message").getAsString().equals("Information login is incorrect"));
 	}
 
 	@Test

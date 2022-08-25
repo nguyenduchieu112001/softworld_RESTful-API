@@ -103,7 +103,7 @@ public class UserController {
 				return ErrorMessage.methodNotAllowed("Account disabled");
 			}
 		} else {
-			return ErrorMessage.unAuthorized("Login information is incorrect");
+			return ErrorMessage.unAuthorized("Information login is incorrect");
 		}
 	}
 
